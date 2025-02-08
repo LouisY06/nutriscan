@@ -1,10 +1,13 @@
-import { Camera } from "expo-camera";
+import { Ionicons } from "@expo/vector-icons";
+import { Camera, CameraView } from "expo-camera";
+import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function ScanScreen() {
   const [hasPermission, setHasPermission] = useState(null);
   const cameraRef = useRef(null);
+  const router = useRouter();
 
   useEffect(() => {
     (async () => {
@@ -13,18 +16,51 @@ export default function ScanScreen() {
     })();
   }, []);
 
-  if (hasPermission === null) return <View />;
-  if (hasPermission === false) return <Text>No access to camera</Text>;
+  const takePicture = async () => {
+    if (cameraRef.current) {
+      const photo = await cameraRef.current.takePictureAsync();
+      router.push({ pathname: "/tabs/results", params: { imageUri: photo.uri } });
+    }
+  };
+
+  if (hasPermission === null) return <View style={styles.permissionContainer}><Text>Requesting Camera Permission...</Text></View>;
+  if (hasPermission === false) return <View style={styles.permissionContainer}><Text>No access to camera</Text></View>;
 
   return (
-    <View className="flex-1">
-      <Camera ref={cameraRef} style={{ flex: 1 }} />
-      <TouchableOpacity
-        className="absolute bottom-10 bg-blue-500 px-6 py-3 rounded-full self-center"
-        onPress={() => console.log("Capture button pressed")}
-      >
-        <Text className="text-white font-semibold text-lg">Capture</Text>
-      </TouchableOpacity>
+    <View style={styles.container}>
+      <CameraView ref={cameraRef} style={styles.camera} />
+      <View style={styles.overlay}>
+        <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
+          <Ionicons name="camera-outline" size={40} color="white" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  camera: {
+    flex: 1,
+  },
+  overlay: {
+    position: "absolute",
+    bottom: 50,
+    alignSelf: "center",
+  },
+  captureButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    padding: 15,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: "white",
+    alignItems: "center",
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
